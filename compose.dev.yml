@@ -1,0 +1,36 @@
+services:
+    mongo:
+        image: mongo:latest
+        container_name: template-mongo
+        ports:
+            - '27017:27017'
+        volumes:
+            - mongo_data:/data/db
+        healthcheck:
+            test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    api:
+        image: node:24-slim
+        container_name: template-api-dev
+        working_dir: /usr/src/app
+        command: sh -c "npm ci && npm run dev"
+        ports:
+            - '3000:3000'
+        env_file:
+            - .env
+        environment:
+            PORT: 3000
+            MONGO_URI: mongodb://mongo:27017/mern_example
+        volumes:
+            - ./:/usr/src/app
+            - api_node_modules:/usr/src/app/node_modules
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+volumes:
+    mongo_data:
+    api_node_modules:
